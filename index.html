@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinder Pro</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  background:#000;
+  color:#fff;
+}
+
+#hero {
+  height:300px;
+  background-size:cover;
+  display:flex;
+  align-items:flex-end;
+  padding:20px;
+}
+
+button {
+  padding:10px 20px;
+  border:none;
+  background:red;
+  color:white;
+  cursor:pointer;
+}
+
+.row {
+  padding:10px;
+}
+
+.cards {
+  display:flex;
+  overflow-x:auto;
+  gap:10px;
+}
+
+.card img {
+  width:140px;
+  border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HERO -->
+<div id="hero">
+  <div>
+    <h1 id="hero-title"></h1>
+    <button onclick="watchHero()">▶ Play</button>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div style="padding:10px;">
+  <input type="text" placeholder="Search..." oninput="search(this.value)"
+    style="width:100%;padding:10px;border-radius:5px;border:none;">
+</div>
+
+<div id="content"></div>
+
+<script>
+const API_KEY = "0f104b412df2c748c40a11f7896b83f6";
+const IMG = "https://image.tmdb.org/t/p/w500";
+
+let heroMovie;
+
+// FETCH FUNCTIONS
+async function getTrending(){
+  const r = await fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${API_KEY}`);
+  return (await r.json()).results;
+}
+
+async function getPopular(){
+  const r = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}`);
+  return (await r.json()).results;
+}
+
+async function getTop(){
+  const r = await fetch(`https://api.themoviedb.org/3/movie/top_rated?api_key=${API_KEY}`);
+  return (await r.json()).results;
+}
+
+// HERO
+async function loadHero(){
+  const data = await getTrending();
+  heroMovie = data[0];
+
+  document.getElementById("hero").style.backgroundImage =
+    `url(https://image.tmdb.org/t/p/original${heroMovie.backdrop_path})`;
+
+  document.getElementById("hero-title").innerText = heroMovie.title;
+}
+
+function watchHero(){
+  window.open(`https://www.google.com/search?q=${heroMovie.title}+watch+online`);
+}
+
+// ROW UI
+function createRow(title, movies){
+  return `
+    <div class="row">
+      <h2>${title}</h2>
+      <div class="cards">
+        ${movies.map(m => `
+          <div class="card" onclick="watch('${m.title}')">
+            <img src="${IMG + m.poster_path}">
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+// LOAD HOME
+async function loadHome(){
+  const t = await getTrending();
+  const p = await getPopular();
+  const top = await getTop();
+
+  loadHero();
+
+  document.getElementById("content").innerHTML =
+    createRow("🔥 Trending", t) +
+    createRow("⭐ Popular", p) +
+    createRow("🏆 Top Rated", top);
+}
+
+// SEARCH
+async function search(q){
+  if(!q){
+    loadHome();
+    return;
+  }
+
+  const r = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${q}`);
+  const data = (await r.json()).results;
+
+  document.getElementById("content").innerHTML = createRow("Results", data);
+}
+
+// WATCH
+function watch(title){
+  window.open(`https://www.google.com/search?q=${title}+watch+online`);
+}
+
+// INIT
+loadHome();
+</script>
+
+</body>
+</html>
